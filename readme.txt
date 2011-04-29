@@ -1,0 +1,1 @@
+GSDを利用してDirectX使用のソフトにcrosshairを描画します
