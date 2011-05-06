@@ -124,31 +124,26 @@ void GUI_GSD_Start(int red, int green, int blue, int alpha)
 
 	// 描画処理メイン
 	// 十字のテクスチャ生成
-	int crosshair_red = red;
-	int crosshair_green = green;
-	int crosshair_blue = blue;
-	int crosshair_alpha = alpha;
-
 	int bold = 4;
 	int k = 0;
 	for(int i=0; i<(int)info.texSize; i++){
 		for(int j=0; j<(int)bold; j++){
-			k = (i * info.texSize + j + (info.texSize / 2 - bold)) * 4;
+			k = (i * info.texSize + j + (info.texSize / 2 - bold)) * 4; // 4 mean 4byte (R,G,B,A)
 
-			info.data[k+0] = (BYTE)crosshair_blue; // B
-			info.data[k+1] = (BYTE)crosshair_green; // G
-			info.data[k+2] = (BYTE)crosshair_red; // R
-			info.data[k+3] = (BYTE)crosshair_alpha; // A
+			info.data[k+0] = (BYTE)blue; // B
+			info.data[k+1] = (BYTE)green; // G
+			info.data[k+2] = (BYTE)red; // R
+			info.data[k+3] = (BYTE)alpha; // A
 		}
 	}
 	for(int i=0; i<bold; i++){
 		for(int j=0; j<(int)info.texSize; j++){
-			k = ((info.texSize / 2 - bold + i) * info.texSize + j) * 4;
+			k = ((info.texSize / 2 - bold + i) * info.texSize + j) * 4; // 4 mean 4byte (R,G,B,A)
 
-			info.data[k+0] = (BYTE)crosshair_blue; // B
-			info.data[k+1] = (BYTE)crosshair_green; // G
-			info.data[k+2] = (BYTE)crosshair_red; // R
-			info.data[k+3] = (BYTE)crosshair_alpha; // A
+			info.data[k+0] = (BYTE)blue; // B
+			info.data[k+1] = (BYTE)green; // G
+			info.data[k+2] = (BYTE)red; // R
+			info.data[k+3] = (BYTE)alpha; // A
 		}
 	}
 
