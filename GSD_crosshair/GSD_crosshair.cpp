@@ -1,4 +1,4 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "GSD_crosshair.h"
 #pragma comment(lib, "gsd.lib.vc")
 #include <math.h>
@@ -13,15 +13,15 @@
     case(msg): \
 	return SetDlgMsgResult(hwnd, msg, HANDLE_##msg(hwnd, wParam, lParam,fn)) 
 
-// ƒOƒ[ƒoƒ‹•Ï”:
-HINSTANCE hInst;								// Œ»İ‚ÌƒCƒ“ƒ^[ƒtƒFƒCƒX
-TCHAR szTitle[MAX_LOADSTRING];					// ƒ^ƒCƒgƒ‹ ƒo[‚ÌƒeƒLƒXƒg
-TCHAR szWindowClass[MAX_LOADSTRING];			// ƒƒCƒ“ ƒEƒBƒ“ƒhƒE ƒNƒ‰ƒX–¼
+// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°:
+HINSTANCE hInst;								// ç¾åœ¨ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ã‚¤ã‚¹
+TCHAR szTitle[MAX_LOADSTRING];					// ã‚¿ã‚¤ãƒˆãƒ« ãƒãƒ¼ã®ãƒ†ã‚­ã‚¹ãƒˆ
+TCHAR szWindowClass[MAX_LOADSTRING];			// ãƒ¡ã‚¤ãƒ³ ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ ã‚¯ãƒ©ã‚¹å
 
 HWND g_hMainDlg = NULL;
 HWND g_hWnd = NULL;
 
-// ‚±‚ÌƒR[ƒh ƒ‚ƒWƒ…[ƒ‹‚ÉŠÜ‚Ü‚ê‚éŠÖ”‚ÌéŒ¾‚ğ“]‘—‚µ‚Ü‚·:
+// ã“ã®ã‚³ãƒ¼ãƒ‰ ãƒ¢ã‚¸ãƒ¥ãƒ¼ãƒ«ã«å«ã¾ã‚Œã‚‹é–¢æ•°ã®å®£è¨€ã‚’è»¢é€ã—ã¾ã™:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -35,23 +35,23 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	// TODO: ‚±‚±‚ÉƒR[ƒh‚ğ‘}“ü‚µ‚Ä‚­‚¾‚³‚¢B
+	// TODO: ã“ã“ã«ã‚³ãƒ¼ãƒ‰ã‚’æŒ¿å…¥ã—ã¦ãã ã•ã„ã€‚
 	MSG msg;
 	HACCEL hAccelTable;
 
-	// ƒOƒ[ƒoƒ‹•¶š—ñ‚ğ‰Šú‰»‚µ‚Ä‚¢‚Ü‚·B
+	// ã‚°ãƒ­ãƒ¼ãƒãƒ«æ–‡å­—åˆ—ã‚’åˆæœŸåŒ–ã—ã¦ã„ã¾ã™ã€‚
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_GSD_CROSSHAIR, szWindowClass, MAX_LOADSTRING);
 	MyRegisterClass(hInstance);
 
-	// ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì‰Šú‰»‚ğÀs‚µ‚Ü‚·:
+	// ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®åˆæœŸåŒ–ã‚’å®Ÿè¡Œã—ã¾ã™:
 	if (!InitInstance (hInstance, nCmdShow)){
 		return FALSE;
 	}
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_GSD_CROSSHAIR));
 
-	// ƒƒCƒ“ ƒƒbƒZ[ƒW ƒ‹[ƒv:
+	// ãƒ¡ã‚¤ãƒ³ ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ ãƒ«ãƒ¼ãƒ—:
 	while (GetMessage(&msg, NULL, 0, 0)){
 		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg)){
 			TranslateMessage(&msg);
@@ -85,7 +85,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
 	HWND hWnd;
-	hInst = hInstance; // ƒOƒ[ƒoƒ‹•Ï”‚ÉƒCƒ“ƒXƒ^ƒ“ƒXˆ—‚ğŠi”[‚µ‚Ü‚·
+	hInst = hInstance; // ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°ã«ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹å‡¦ç†ã‚’æ ¼ç´ã—ã¾ã™
 
 	hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
@@ -101,7 +101,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return TRUE;
 }
 
-// GSDƒtƒbƒNŠJn‚µ‚Ü‚·
+// GSDãƒ•ãƒƒã‚¯é–‹å§‹ã—ã¾ã™
 void GUI_GSD_Start(int red, int green, int blue, int alpha)
 {
 	const DWORD size = 40;
@@ -157,13 +157,13 @@ void GUI_GSD_Start(int red, int green, int blue, int alpha)
 	GSD_DataUnlock();
 }
 
-// GSDƒtƒbƒN‚ğI—¹‚µ‚Ü‚·
+// GSDãƒ•ãƒƒã‚¯ã‚’çµ‚äº†ã—ã¾ã™
 void GUI_GSD_Stop()
 {
 	::GSD_Finalize();
 }
 
-// GSDƒtƒbƒN‚ÌŒã•Ğ•t‚¯ˆ—‚ğ‚µ‚Ü‚·
+// GSDãƒ•ãƒƒã‚¯ã®å¾Œç‰‡ä»˜ã‘å‡¦ç†ã‚’ã—ã¾ã™
 void GUI_GSD_Finalize()
 {
 	::GSD_Finalize();
@@ -196,13 +196,13 @@ BOOL Main_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 	SendDlgItemMessage(hwnd, IDC_SLIDER_B, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
 	SendDlgItemMessage(hwnd, IDC_SLIDER_A, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
 
-	// ƒXƒ‰ƒCƒ_[‚Ì”’l•”•ª‚Ì‰Šú‰»
+	// ã‚¹ãƒ©ã‚¤ãƒ€ãƒ¼ã®æ•°å€¤éƒ¨åˆ†ã®åˆæœŸåŒ–
 	::SetDlgItemInt(hwnd, IDC_EDIT_R, 0, TRUE);
 	::SetDlgItemInt(hwnd, IDC_EDIT_G, 255, TRUE);
 	::SetDlgItemInt(hwnd, IDC_EDIT_B, 0, TRUE);
-	::SetDlgItemInt(hwnd, IDC_EDIT_A, 255, TRUE); // default = 100%•s“§–¾
+	::SetDlgItemInt(hwnd, IDC_EDIT_A, 255, TRUE); // default = 100%ä¸é€æ˜
 
-	// ƒXƒ‰ƒCƒ_[‚ÌUI•”•ª‚Ì‰Šú‰»
+	// ã‚¹ãƒ©ã‚¤ãƒ€ãƒ¼ã®UIéƒ¨åˆ†ã®åˆæœŸåŒ–
 	SendDlgItemMessage(hwnd, IDC_SLIDER_R, TBM_SETPOS, TRUE, 0); 
 	SendDlgItemMessage(hwnd, IDC_SLIDER_G, TBM_SETPOS, TRUE, 255); 
 	SendDlgItemMessage(hwnd, IDC_SLIDER_B, TBM_SETPOS, TRUE, 0); 
@@ -219,13 +219,13 @@ void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT code)
 	{
 	case IDOK:
 		if(apiHookEnable){
-			// APIƒtƒbƒN’†‚¾‚Á‚½‚Æ‚«‚ÍAPIƒtƒbƒN‚Ì’â~ˆ—‚ğs‚¢‚Ü‚·
+			// APIãƒ•ãƒƒã‚¯ä¸­ã ã£ãŸã¨ãã¯APIãƒ•ãƒƒã‚¯ã®åœæ­¢å‡¦ç†ã‚’è¡Œã„ã¾ã™
 			GUI_GSD_Stop();
 
 			::SetWindowText(g_hMainDlg, L"GSD Crosshair");
-			::SetDlgItemText(g_hMainDlg, IDOK, L"ŠJn");
+			::SetDlgItemText(g_hMainDlg, IDOK, L"é–‹å§‹");
 		}else{
-			// APIƒtƒbƒN‚µ‚Ä‚È‚©‚Á‚½‚Æ‚«‚ÍAAPIƒtƒbƒNˆ—‚ğs‚¢‚Ü‚·
+			// APIãƒ•ãƒƒã‚¯ã—ã¦ãªã‹ã£ãŸã¨ãã¯ã€APIãƒ•ãƒƒã‚¯å‡¦ç†ã‚’è¡Œã„ã¾ã™
 			int red = ::GetDlgItemInt(hwnd, IDC_EDIT_R, NULL, TRUE);
 			int green = ::GetDlgItemInt(hwnd, IDC_EDIT_G, NULL, TRUE);
 			int blue = ::GetDlgItemInt(hwnd, IDC_EDIT_B, NULL, TRUE);
@@ -233,8 +233,8 @@ void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT code)
 
 			GUI_GSD_Start(red, green, blue, alpha);
 
-			::SetWindowText(g_hMainDlg, L"GSD Crosshair (APIƒtƒbƒN’†)");
-			::SetDlgItemText(g_hMainDlg, IDOK, L"’†~");
+			::SetWindowText(g_hMainDlg, L"GSD Crosshair (APIãƒ•ãƒƒã‚¯ä¸­)");
+			::SetDlgItemText(g_hMainDlg, IDOK, L"ä¸­æ­¢");
 		}
 		apiHookEnable = !apiHookEnable;
 		break;
