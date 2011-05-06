@@ -9,10 +9,6 @@
 
 #define MAX_LOADSTRING 100
 
-#define HANDLE_DLG_MSG(hwnd, msg, fn) \
-    case(msg): \
-	return SetDlgMsgResult(hwnd, msg, HANDLE_##msg(hwnd, wParam, lParam,fn)) 
-
 // グローバル変数:
 HINSTANCE hInst;								// 現在のインターフェイス
 TCHAR szTitle[MAX_LOADSTRING];					// タイトル バーのテキスト
@@ -97,7 +93,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	UpdateWindow(hWnd);
-
 	return TRUE;
 }
 
@@ -106,26 +101,36 @@ void GUI_GSD_Start(int red, int green, int blue, int alpha)
 {
 	const DWORD size = 40;
 
-	GSD_Initialize();
-	GSD_InitTexture(&size, 1);
-
-	// main
-	GSD_TextureInfo info;
-
+	// 利用準備
 	GSD_DataLock();
-	GSD_GetTexture(0, &info);
 
-	int x = 0;
-	int y = 0;
-	int k = 0;
+	// GSDの初期化
+	if( !GSD_Initialize() ){
+		ShowLastError();
+		return;
+	}
+	if( !GSD_InitTexture(&size, 1) ){
+		ShowLastError();
+		::GSD_DataUnlock();
+		return;
+	}
 
+	GSD_TextureInfo info;
+	if( !GSD_GetTexture(0, &info) ){
+		ShowLastError();
+		::GSD_DataUnlock();
+		return;
+	}
+
+	// 描画処理メイン
+	// 十字のテクスチャ生成
 	int crosshair_red = red;
 	int crosshair_green = green;
 	int crosshair_blue = blue;
 	int crosshair_alpha = alpha;
 
 	int bold = 4;
-	k = 0;
+	int k = 0;
 	for(int i=0; i<(int)info.texSize; i++){
 		for(int j=0; j<(int)bold; j++){
 			k = (i * info.texSize + j + (info.texSize / 2 - bold)) * 4;
@@ -148,12 +153,16 @@ void GUI_GSD_Start(int red, int green, int blue, int alpha)
 	}
 
 	info.active = TRUE;
-	info.x = 0;
-	info.y = 0;
+	info.x = info.y = 0;
 	info.color = 0xffffffff;
 	info.align = DT_CENTER | DT_VCENTER;
 
-	GSD_SetTexture(0, &info);
+	if( !GSD_SetTexture(0, &info) ){
+		::ShowLastError();
+		::GSD_DataUnlock();
+		return;
+	}
+
 	GSD_DataUnlock();
 }
 
@@ -191,6 +200,10 @@ void Main_OnHScroll(HWND hwnd, HWND hwndCtl, UINT code, int pos)
 
 BOOL Main_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
 {
+	// 最前面に表示
+	::SetWindowTopMost(hwnd);
+
+	// スライダーの数値範囲制限
 	SendDlgItemMessage(hwnd, IDC_SLIDER_R, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
 	SendDlgItemMessage(hwnd, IDC_SLIDER_G, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
 	SendDlgItemMessage(hwnd, IDC_SLIDER_B, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
@@ -221,9 +234,6 @@ void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT code)
 		if(apiHookEnable){
 			// APIフック中だったときはAPIフックの停止処理を行います
 			GUI_GSD_Stop();
-
-			::SetWindowText(g_hMainDlg, L"GSD Crosshair");
-			::SetDlgItemText(g_hMainDlg, IDOK, L"開始");
 		}else{
 			// APIフックしてなかったときは、APIフック処理を行います
 			int red = ::GetDlgItemInt(hwnd, IDC_EDIT_R, NULL, TRUE);
@@ -232,11 +242,11 @@ void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT code)
 			int alpha = ::GetDlgItemInt(hwnd, IDC_EDIT_A, NULL, TRUE);
 
 			GUI_GSD_Start(red, green, blue, alpha);
-
-			::SetWindowText(g_hMainDlg, L"GSD Crosshair (APIフック中)");
-			::SetDlgItemText(g_hMainDlg, IDOK, L"中止");
 		}
 		apiHookEnable = !apiHookEnable;
+
+		::SetWindowTextFormat(g_hMainDlg, L"%s%s", L"GSD Crosshair", apiHookEnable ? L"(APIフック中)" : L"");
+		::SetDlgItemText(g_hMainDlg, IDOK, apiHookEnable ? L"中止" : L"開始");
 		break;
 	case IDCANCEL:
 		EndDialog(hwnd, code);
@@ -250,9 +260,9 @@ INT_PTR CALLBACK Main(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-		HANDLE_MSG(hDlg, WM_HSCROLL, Main_OnHScroll);
-		HANDLE_MSG(hDlg, WM_INITDIALOG, Main_OnInitDialog);
-		HANDLE_MSG(hDlg, WM_COMMAND, Main_OnCommand);
+		HANDLE_DLG_MSG(hDlg, WM_HSCROLL, Main_OnHScroll);
+		HANDLE_DLG_MSG(hDlg, WM_INITDIALOG, Main_OnInitDialog);
+		HANDLE_DLG_MSG(hDlg, WM_COMMAND, Main_OnCommand);
 	}
 	return (INT_PTR)FALSE;
 }

@@ -7,6 +7,11 @@
 
 #include <math.h>
 
+// ダイアログ用のメッセージクラッカー
+#define HANDLE_DLG_MSG(hwnd, msg, fn) \
+    case(msg): \
+	return SetDlgMsgResult(hwnd, msg, HANDLE_##msg(hwnd, wParam, lParam,fn)) 
+
 #define SLIDER_GETPOS(lp) (::SendMessage((HWND)lp, TBM_GETPOS, 0, 0))
 
 void trace(LPCTSTR format, ...);
