@@ -6,12 +6,13 @@
 #include <WindowsX.h>
 #include <CommCtrl.h>
 #include "Util.h"
-
+#include <exception>
 #include <GdiPlus.h>
 #pragma comment(lib, "gdiplus.lib")
 using namespace Gdiplus;
 
 #define MAX_LOADSTRING 100
+#define MUTEX_NAME L"GSD_crosshair"
 
 // グローバル変数:
 HINSTANCE hInst;								// 現在のインターフェイス
@@ -95,7 +96,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	// TODO: ここにコードを挿入してください。
+	// 多重起動防止
+	CMutex mutex;
+	try{
+		mutex.createMutex(MUTEX_NAME);
+	}catch(std::exception e){
+		::ErrorMessageBox(L"多重起動です");
+		exit(0);
+	}
+
 	MSG msg;
 	HACCEL hAccelTable;
 
