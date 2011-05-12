@@ -39,3 +39,4 @@
 #define IDC_EDIT_G				2006
 #define IDC_EDIT_B				2007
 #define IDC_EDIT_A				2008
+#define IDD_SIMPLE_DIALOG		2009
