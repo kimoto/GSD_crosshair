@@ -389,6 +389,7 @@ BOOL OnCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct)
 BOOL OnDestroy(HWND hWnd)
 {
 	GUI_GSD_Finalize();
+	::TasktrayDeleteIcon(hWnd, ID_TASKTRAY);
 	PostQuitMessage(0);
 	return TRUE;
 }
