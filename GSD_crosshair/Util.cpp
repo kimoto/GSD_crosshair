@@ -1,9 +1,17 @@
-﻿#include "stdafx.h"
-#include "Util.h"
+﻿#include "Util.h"
 
 #define TRACE_BUFFER_SIZE 1024
 #define FORMAT_BUFFER_SIZE 1024
 #define MCI_LASTERROR_BUFSIZE 1024
+
+// GlobalAllocのインターフェースで、heapを確保する関数
+// 過去のコード書き直すのめんどかったのでつくった
+// 名前はおかしい
+// 引数のflagsは完全に無視されます
+LPVOID GlobalAllocHeap(UINT flags, SIZE_T size)
+{
+	return ::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY | HEAP_GENERATE_EXCEPTIONS, size);
+}
 
 void trace(LPCTSTR format, ...)
 {
@@ -79,7 +87,7 @@ void drawRectColor(HDC hdc, int x, int y, int width, int height, COLORREF color,
 
 void mciShowLastError(MMRESULT result)
 {
-	LPTSTR lpstr = (LPWSTR)::GlobalAlloc(GMEM_FIXED, MCI_LASTERROR_BUFSIZE);
+	LPTSTR lpstr = (LPTSTR)::GlobalAllocHeap(GMEM_FIXED, MCI_LASTERROR_BUFSIZE);
 	mciGetErrorString(result, lpstr, MCI_LASTERROR_BUFSIZE);
 	::MessageBox(NULL, lpstr, L"ERROR", MB_OK);
 }
@@ -412,7 +420,7 @@ LPTSTR GetKeyNameTextEx(UINT vk)
 		break;
 	}
 
-	LPTSTR buffer = (LPTSTR)::GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, KEYNAMETEXT_BUFFER_SIZE);
+	LPTSTR buffer = (LPTSTR)::GlobalAllocHeap(GMEM_FIXED | GMEM_ZEROINIT, KEYNAMETEXT_BUFFER_SIZE);
 	::GetKeyNameText(lParam, buffer, KEYNAMETEXT_BUFFER_SIZE);
 	return buffer;
 }
@@ -429,7 +437,7 @@ LPTSTR GetKeyConfigString(int vk, int opt_vk)
 	LPTSTR vk_str = ::GetKeyNameTextEx(vk);
 	LPTSTR opt_vk_str = ::GetKeyNameTextEx(opt_vk);
 
-	LPTSTR s_buffer = (LPTSTR)::GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, 256);
+	LPTSTR s_buffer = (LPTSTR)::GlobalAllocHeap(GMEM_FIXED | GMEM_ZEROINIT, 256);
 	if(opt_vk != NULL){ // CONTROL,ALTキーが設定されていた場合はALT + Bみたいな文字列になる
 		::wsprintf(s_buffer, L"%s + %s", opt_vk_str, vk_str);
 	}else{
@@ -447,18 +455,9 @@ void ErrorMessageBox(LPCTSTR format, ...)
 	va_list arg;
 	va_start(arg, format);
 
-	::ErrorMessageBox(NULL, format, arg);
-	va_end(arg);
-}
-
-void ErrorMessageBox(HWND g_hWnd, LPCTSTR format, ...)
-{
-	va_list arg;
-	va_start(arg, format);
-
 	TCHAR buffer[TRACE_BUFFER_SIZE];
 	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
-	::MessageBox(g_hWnd, buffer, L"Error", MB_OK);
+	::MessageBox(NULL, buffer, L"Error", MB_OK);
 	va_end(arg);
 }
 
@@ -562,7 +561,7 @@ LPTSTR sprintf_alloc(LPTSTR format, ...)
 	va_list arg;
 	va_start(arg, format);
 	
-	LPTSTR buffer = (LPTSTR)::GlobalAlloc(GMEM_FIXED | GMEM_ZEROINIT, TRACE_BUFFER_SIZE * sizeof(TCHAR));
+	LPTSTR buffer = (LPTSTR)::GlobalAllocHeap(GMEM_FIXED | GMEM_ZEROINIT, TRACE_BUFFER_SIZE * sizeof(TCHAR));
 	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
 	va_end(arg);
 
@@ -680,7 +679,132 @@ BOOL RestoreFile(LPCTSTR filePath, LPCTSTR backupExt=L".bak")
 
 LPTSTR GetWindowTitle(HWND hWnd)
 {
-	LPTSTR buffer = (LPTSTR)::GlobalAlloc(GMEM_FIXED, 256 * sizeof(TCHAR));
+	LPTSTR buffer = (LPTSTR)::GlobalAllocHeap(GMEM_FIXED, 256 * sizeof(TCHAR));
 	::GetWindowText(hWnd, buffer, 256);
 	return buffer;
+}
+
+// 指定されたIDのコンテキストメニューを表示します
+BOOL ShowContextMenu(HWND hWnd, UINT menuID)
+{
+	// 実質メモリリークしてるけど何回繰り返しても一定値から増えないから気にしてない
+	// おそらくwindows側で同じインスタンスが存在しないように管理してくれてる
+	HMENU hMenu = ::LoadMenu(NULL, MAKEINTRESOURCE(menuID));
+	HMENU hSubMenu = ::GetSubMenu(hMenu, 0);
+	
+	POINT point;
+	::GetCursorPos(&point);
+
+	::SetForegroundWindow(hWnd);
+
+	::TrackPopupMenu(hSubMenu, TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y, 0, hWnd, NULL);
+	::PostMessage(hWnd, WM_NULL, 0, 0);
+	return TRUE;
+}
+
+void TasktrayAddIcon(HINSTANCE hInstance, UINT msg, UINT id, UINT iconId, LPCTSTR tips, HWND hWnd)
+{
+	NOTIFYICONDATA nid;
+	nid.cbSize           = sizeof( NOTIFYICONDATA );
+	nid.uFlags           = (NIF_ICON|NIF_MESSAGE|NIF_TIP);
+	nid.hWnd             = hWnd;           // ウインドウ・ハンドル
+	nid.hIcon            = ::LoadIcon(hInstance, MAKEINTRESOURCE(iconId));          // アイコン・ハンドル
+	nid.uID              = id; 	// アイコン識別子の定数
+	nid.uCallbackMessage = msg;    // 通知メッセージの定数
+	lstrcpy(nid.szTip, tips);  // チップヘルプの文字列
+
+	// アイコンの変更
+	if( !Shell_NotifyIcon( NIM_ADD, &nid ) )
+		::ShowLastError();
+}
+
+void TasktrayModifyIcon(HINSTANCE hInstance, UINT msg, UINT id, HWND hWnd,  LPCTSTR tips, UINT icon)
+{
+	NOTIFYICONDATA nid;
+	nid.cbSize           = sizeof( NOTIFYICONDATA );
+	nid.uFlags           = (NIF_ICON|NIF_MESSAGE|NIF_TIP);
+	nid.hWnd             = hWnd;           // ウインドウ・ハンドル
+	nid.hIcon            = ::LoadIcon(hInstance, MAKEINTRESOURCE(icon));          // アイコン・ハンドル
+	nid.uID              = id; 	// アイコン識別子の定数
+	nid.uCallbackMessage = msg;    // 通知メッセージの定数
+	lstrcpy( nid.szTip, tips );  // チップヘルプの文字列
+
+	if( !::Shell_NotifyIcon(NIM_MODIFY, &nid) )
+		::ShowLastError();
+}
+
+void TasktrayDeleteIcon(HWND hWnd, UINT id)
+{
+	NOTIFYICONDATA nid; 
+	nid.cbSize = sizeof(NOTIFYICONDATA); 
+	nid.hWnd = hWnd;				// メインウィンドウハンドル
+	nid.uID = id;			// コントロールID
+	
+	if( !::Shell_NotifyIcon(NIM_DELETE, &nid) )
+		::ShowLastError();
+}
+
+HWND WindowFromCursorPos()
+{
+	POINT pt;
+	::GetCursorPos(&pt);
+	return ::WindowFromPoint(pt);
+}
+
+void NoticeRedraw(HWND hWnd)
+{
+	::InvalidateRect(hWnd, NULL, FALSE);
+	::UpdateWindow(hWnd);
+	::RedrawWindow(hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+	::SendMessage(hWnd, WM_PAINT, 0, 0);
+}
+
+void RectangleNormalize(RECT *rect)
+{
+	// 常に左上基点の構造体に変換
+	if(rect->right - rect->left < 0){
+		// 左右逆
+		int tmp = rect->left;
+		rect->left = rect->right;
+		rect->right = tmp;
+	}
+	if(rect->bottom - rect->top < 0){
+		int tmp = rect->top;
+		rect->top = rect->bottom;
+		rect->bottom = tmp;
+	}
+}
+
+std::wstring str2wstr(std::string str)
+{
+	// そのサイズだけ確保し、変換します
+	wchar_t *wbuf = NULL;
+
+	// マルチバイト文字を変換するに当たって、変換後の文字数を調べます
+	int need_buf_size = ::MultiByteToWideChar(0, 0, str.c_str(), str.size(), NULL, 0);
+
+	wbuf = new wchar_t[need_buf_size];
+	::MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.size(), wbuf, need_buf_size);
+
+	// 返却するためにオブジェクトにくるみます
+	std::wstring result;
+	result += wbuf;
+	delete wbuf;
+	return result;
+}
+
+// 実行ファイルのディレクトリに、config.ini(デフォルト)を付加した物になります
+// 動的にバッファを格納して返却するので、解放必須です
+LPTSTR GetConfigPath(LPTSTR fileName)
+{
+	LPTSTR lpExecDirectory = (LPTSTR)::GlobalAlloc(GMEM_FIXED, MAX_PATH * sizeof(TCHAR));
+	if( ::GetExecuteDirectory(lpExecDirectory, MAX_PATH) ) {
+		LPTSTR lpConfigPath = sprintf_alloc(L"%s%s", lpExecDirectory, fileName);
+		::GlobalFree(lpExecDirectory);
+		return lpConfigPath;
+	} else {
+		::GlobalFree(lpExecDirectory);
+		::ShowLastError();
+		return NULL;
+	}
 }

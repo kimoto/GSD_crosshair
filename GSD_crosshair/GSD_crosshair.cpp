@@ -22,6 +22,10 @@ TCHAR szWindowClass[MAX_LOADSTRING];			// メイン ウィンドウ クラス名
 HWND g_hMainDlg = NULL;
 HWND g_hWnd = NULL;
 
+#define WM_TASKTRAY (WM_APP + 1)
+#define ID_TASKTRAY 1
+
+#define S_TASKTRAY_TIPS L"GSD_Crosshair"
 
 BOOL GetClsidEncoderFromMimeType(LPCTSTR format, LPCLSID lpClsid)
 {
@@ -165,6 +169,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 		return FALSE;
 	}
 
+	::TasktrayAddIcon(hInstance, WM_TASKTRAY, ID_TASKTRAY,
+		IDI_GSD_CROSSHAIR, S_TASKTRAY_TIPS, hWnd);
+
 	UpdateWindow(hWnd);
 	return TRUE;
 }
@@ -174,7 +181,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 BOOL GUI_GSD_Start(LPCTSTR imageFilePath)
 {	
 	if(!::PathFileExists(imageFilePath)){
-		::ErrorMessageBox(g_hMainDlg, L"ファイルが存在しません: %s", imageFilePath);
+		::ErrorMessageBox(L"ファイルが存在しません: %s", imageFilePath);
 		return FALSE;
 	}
 
@@ -358,10 +365,21 @@ INT_PTR CALLBACK Main(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	return (INT_PTR)FALSE;
 }
 
+UINT taskBarMsg = 0;
 BOOL OnCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct)
 {
+	/*
 	g_hMainDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_SIMPLE_DIALOG), hWnd, Main);
 	if(g_hMainDlg == NULL){
+		::ShowLastError();
+		return FALSE;
+	}
+	*/
+	
+	// タスクトレイ復帰用
+	taskBarMsg = RegisterWindowMessage(TEXT("TaskbarCreated"));
+
+	if( !::GUI_GSD_Start(L"crosshair.png") ){
 		::ShowLastError();
 		return FALSE;
 	}
@@ -375,12 +393,35 @@ BOOL OnDestroy(HWND hWnd)
 	return TRUE;
 }
 
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message){
 		HANDLE_MSG(hWnd, WM_CREATE, OnCreate);
 		HANDLE_MSG(hWnd, WM_DESTROY, OnDestroy);
+
+	case WM_COMMAND:
+		switch(LOWORD(wParam)){
+		case IDM_EXIT:
+			::GUI_GSD_Stop();
+			::GUI_GSD_Finalize();
+			::DestroyWindow(hWnd);
+			break;
+		}
+		return TRUE;
+
+	case WM_TASKTRAY:
+		switch(lParam){
+		case WM_RBUTTONDOWN:
+			::ShowContextMenu(hWnd, IDR_MENU);
+			break;
+		}
+		return TRUE;
 	default:
+		if(message == taskBarMsg){
+			TasktrayAddIcon(hInst, WM_TASKTRAY, ID_TASKTRAY, IDI_GSD_CROSSHAIR, S_TASKTRAY_TIPS, hWnd);
+			return 0;
+		}
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;

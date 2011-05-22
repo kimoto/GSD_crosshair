@@ -6,6 +6,7 @@
 #define IDS_APP_TITLE			103
 
 #define IDR_MAINFRAME			128
+#define IDR_MENU				129
 #define IDD_GSD_CROSSHAIR_DIALOG	102
 #define IDD_ABOUTBOX			103
 #define IDM_ABOUT				104
