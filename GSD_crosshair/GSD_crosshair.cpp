@@ -1,9 +1,9 @@
-﻿#include "stdafx.h"
+﻿#include <Windows.h>
+#include <WindowsX.h>
 #include "GSD_crosshair.h"
 #pragma comment(lib, "gsd.lib.vc")
 #include <math.h>
 #include "gsd.h"
-#include <WindowsX.h>
 #include <CommCtrl.h>
 #include "Util.h"
 #include <exception>
@@ -272,110 +272,9 @@ void GUI_GSD_Finalize()
 	::GSD_Finalize();
 }
 
-void Main_OnHScroll(HWND hwnd, HWND hwndCtl, UINT code, int pos)
-{
-	if( hwndCtl == GetDlgItem(hwnd, IDC_SLIDER_R) ){
-		pos = (int)::SendDlgItemMessage(hwnd, IDC_SLIDER_R, TBM_GETPOS, 0, 0);
-		::SetDlgItemInt(hwnd, IDC_EDIT_R, pos, TRUE);
-	}
-	if( hwndCtl == GetDlgItem(hwnd, IDC_SLIDER_G) ){
-		pos = (int)::SendDlgItemMessage(hwnd, IDC_SLIDER_G, TBM_GETPOS, 0, 0);
-		::SetDlgItemInt(hwnd, IDC_EDIT_G, pos, TRUE);
-	}
-	if( hwndCtl == GetDlgItem(hwnd, IDC_SLIDER_B) ){
-		pos = (int)::SendDlgItemMessage(hwnd, IDC_SLIDER_B, TBM_GETPOS, 0, 0);
-		::SetDlgItemInt(hwnd, IDC_EDIT_B, pos, TRUE);
-	}
-	if( hwndCtl == GetDlgItem(hwnd, IDC_SLIDER_A) ){
-		pos = (int)::SendDlgItemMessage(hwnd, IDC_SLIDER_A, TBM_GETPOS, 0, 0);
-		::SetDlgItemInt(hwnd, IDC_EDIT_A, pos, TRUE);
-	}
-}
-
-BOOL Main_OnInitDialog(HWND hwnd, HWND hwndFocus, LPARAM lParam)
-{
-	// 最前面に表示
-	::SetWindowTopMost(hwnd);
-
-	// スライダーの数値範囲制限
-	SendDlgItemMessage(hwnd, IDC_SLIDER_R, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
-	SendDlgItemMessage(hwnd, IDC_SLIDER_G, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
-	SendDlgItemMessage(hwnd, IDC_SLIDER_B, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
-	SendDlgItemMessage(hwnd, IDC_SLIDER_A, TBM_SETRANGE, NULL, MAKELPARAM(0, 255) );
-
-	// スライダーの数値部分の初期化
-	::SetDlgItemInt(hwnd, IDC_EDIT_R, 0, TRUE);
-	::SetDlgItemInt(hwnd, IDC_EDIT_G, 255, TRUE);
-	::SetDlgItemInt(hwnd, IDC_EDIT_B, 0, TRUE);
-	::SetDlgItemInt(hwnd, IDC_EDIT_A, 255, TRUE); // default = 100%不透明
-
-	// スライダーのUI部分の初期化
-	SendDlgItemMessage(hwnd, IDC_SLIDER_R, TBM_SETPOS, TRUE, 0); 
-	SendDlgItemMessage(hwnd, IDC_SLIDER_G, TBM_SETPOS, TRUE, 255); 
-	SendDlgItemMessage(hwnd, IDC_SLIDER_B, TBM_SETPOS, TRUE, 0); 
-	SendDlgItemMessage(hwnd, IDC_SLIDER_A, TBM_SETPOS, TRUE, 255);
-
-	return TRUE;
-}
-
-void Main_OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT code)
-{
-	static bool apiHookEnable = false;
-
-	switch(id)
-	{
-	case IDOK:
-		if(apiHookEnable){
-			// APIフック中だったときはAPIフックの停止処理を行います
-			GUI_GSD_Stop();
-		}else{
-			// APIフックしてなかったときは、APIフック処理を行います
-			int red = ::GetDlgItemInt(hwnd, IDC_EDIT_R, NULL, TRUE);
-			int green = ::GetDlgItemInt(hwnd, IDC_EDIT_G, NULL, TRUE);
-			int blue = ::GetDlgItemInt(hwnd, IDC_EDIT_B, NULL, TRUE);
-			int alpha = ::GetDlgItemInt(hwnd, IDC_EDIT_A, NULL, TRUE);
-
-			if( !GUI_GSD_Start(L"crosshair.png") ){
-				// エラーがあったときはapiHookの状態を遷移させない、あと一応停止処理もする
-				GUI_GSD_Stop();
-				return;
-			}
-		}
-		apiHookEnable = !apiHookEnable;
-
-		::SetWindowTextFormat(g_hMainDlg, L"%s%s", L"GSD Crosshair", apiHookEnable ? L"(APIフック中)" : L"");
-		::SetDlgItemText(g_hMainDlg, IDOK, apiHookEnable ? L"中止" : L"開始");
-		break;
-	case IDCANCEL:
-		EndDialog(hwnd, code);
-		DestroyWindow(hwnd);
-		DestroyWindow(g_hWnd);
-		break;
-	}
-}
-
-INT_PTR CALLBACK Main(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-		HANDLE_DLG_MSG(hDlg, WM_HSCROLL, Main_OnHScroll);
-		HANDLE_DLG_MSG(hDlg, WM_INITDIALOG, Main_OnInitDialog);
-		HANDLE_DLG_MSG(hDlg, WM_COMMAND, Main_OnCommand);
-	}
-	return (INT_PTR)FALSE;
-}
-
 UINT taskBarMsg = 0;
 BOOL OnCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct)
 {
-	/*
-	g_hMainDlg = CreateDialog(hInst, MAKEINTRESOURCE(IDD_SIMPLE_DIALOG), hWnd, Main);
-	if(g_hMainDlg == NULL){
-		::ShowLastError();
-		return FALSE;
-	}
-	*/
-	
 	// タスクトレイ復帰用
 	taskBarMsg = RegisterWindowMessage(TEXT("TaskbarCreated"));
 
@@ -393,7 +292,6 @@ BOOL OnDestroy(HWND hWnd)
 	PostQuitMessage(0);
 	return TRUE;
 }
-
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
