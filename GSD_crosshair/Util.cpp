@@ -15,13 +15,15 @@ LPVOID GlobalAllocHeap(UINT flags, SIZE_T size)
 
 void trace(LPCTSTR format, ...)
 {
+#ifdef _DEBUG
 	va_list arg;
 	va_start(arg, format);
 	
 	TCHAR buffer[TRACE_BUFFER_SIZE];
-	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
+	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, _TRUNCATE, format, arg);
 	::OutputDebugString(buffer);	
 	va_end(arg);
+#endif
 }
 
 void DrawFormatText(HDC hdc, LPRECT rect, UINT type, LPCTSTR format, ...)
@@ -30,7 +32,7 @@ void DrawFormatText(HDC hdc, LPRECT rect, UINT type, LPCTSTR format, ...)
 	va_start(arg, format);
 	
 	TCHAR buffer[TRACE_BUFFER_SIZE];
-	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
+	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, _TRUNCATE, format, arg);
 	::DrawText(hdc, buffer, lstrlen(buffer), rect, type);	
 	va_end(arg);
 }
@@ -41,7 +43,7 @@ void TextFormatOut(HDC hdc, int x, int y, LPCTSTR format, ...)
 	va_start(arg, format);
 	
 	TCHAR buffer[FORMAT_BUFFER_SIZE];
-	::_vsnwprintf_s(buffer, FORMAT_BUFFER_SIZE, FORMAT_BUFFER_SIZE, format, arg);
+	::_vsnwprintf_s(buffer, FORMAT_BUFFER_SIZE, _TRUNCATE, format, arg);
 	::TextOut(hdc, x, y, buffer, lstrlen(buffer));
 	va_end(arg);
 }
@@ -456,7 +458,7 @@ void ErrorMessageBox(LPCTSTR format, ...)
 	va_start(arg, format);
 
 	TCHAR buffer[TRACE_BUFFER_SIZE];
-	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
+	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, _TRUNCATE, format, arg);
 	::MessageBox(NULL, buffer, L"Error", MB_OK);
 	va_end(arg);
 }
@@ -553,7 +555,7 @@ BOOL SetGamma(double gamma)
 
 BOOL SetWindowTopMost(HWND hWnd)
 {
-	return ::SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOREDRAW | SWP_NOACTIVATE | SWP_NOCOPYBITS | SWP_NOSENDCHANGING);
+	return SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW|SWP_NOMOVE|SWP_NOSIZE);
 }
 
 LPTSTR sprintf_alloc(LPTSTR format, ...)
@@ -562,7 +564,7 @@ LPTSTR sprintf_alloc(LPTSTR format, ...)
 	va_start(arg, format);
 	
 	LPTSTR buffer = (LPTSTR)::GlobalAllocHeap(GMEM_FIXED | GMEM_ZEROINIT, TRACE_BUFFER_SIZE * sizeof(TCHAR));
-	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
+	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, _TRUNCATE, format, arg);
 	va_end(arg);
 
 	return buffer;
@@ -574,7 +576,7 @@ BOOL SetWindowTextFormat(HWND hWnd, LPTSTR format, ...)
 	va_start(arg, format);
 
 	TCHAR buffer[TRACE_BUFFER_SIZE];
-	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, TRACE_BUFFER_SIZE, format, arg);
+	::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, _TRUNCATE, format, arg);
 	::SetWindowText(hWnd, buffer);
 	va_end(arg);
 
@@ -806,5 +808,193 @@ LPTSTR GetConfigPath(LPTSTR fileName)
 		::GlobalFree(lpExecDirectory);
 		::ShowLastError();
 		return NULL;
+	}
+}
+
+void GetPrivateProfileKeyInfo(LPCTSTR section, LPCTSTR baseKeyName, KEYINFO *keyInfo, LPCTSTR configPath)
+{
+	LPTSTR key = ::sprintf_alloc(L"%s.key", baseKeyName);
+	LPTSTR ctrl = ::sprintf_alloc(L"%s.ctrlKey", baseKeyName);
+	LPTSTR shift = ::sprintf_alloc(L"%s.shiftKey", baseKeyName);
+	LPTSTR alt = ::sprintf_alloc(L"%s.altKey", baseKeyName);
+
+	keyInfo->key		= ::GetPrivateProfileInt(section, key, keyInfo->key, configPath);
+	keyInfo->ctrlKey	= ::GetPrivateProfileInt(section, ctrl, keyInfo->ctrlKey, configPath);
+	keyInfo->shiftKey	= ::GetPrivateProfileInt(section, shift, keyInfo->shiftKey, configPath);
+	keyInfo->altKey		= ::GetPrivateProfileInt(section, alt, keyInfo->altKey, configPath);
+
+	::GlobalFree(key);
+	::GlobalFree(ctrl);
+	::GlobalFree(shift);
+	::GlobalFree(alt);
+}
+
+void WritePrivateProfileKeyInfo(LPCTSTR section, LPCTSTR baseKeyName, KEYINFO *keyInfo, LPCTSTR configPath)
+{
+	LPTSTR key = ::sprintf_alloc(L"%s.key", baseKeyName);
+	LPTSTR ctrl = ::sprintf_alloc(L"%s.ctrlKey", baseKeyName);
+	LPTSTR shift = ::sprintf_alloc(L"%s.shiftKey", baseKeyName);
+	LPTSTR alt = ::sprintf_alloc(L"%s.altKey", baseKeyName);
+
+	::WritePrivateProfileInt(section, key, keyInfo->key, configPath);
+	::WritePrivateProfileInt(section, ctrl, keyInfo->ctrlKey, configPath);
+	::WritePrivateProfileInt(section, shift, keyInfo->shiftKey, configPath);
+	::WritePrivateProfileInt(section, alt, keyInfo->altKey, configPath);
+
+	::GlobalFree(key);
+	::GlobalFree(ctrl);
+	::GlobalFree(shift);
+	::GlobalFree(alt);
+}
+
+void QuickSetKeyInfo(KEYINFO *info, int optKey, int key)
+{
+	// clear keyinfo
+	::ClearKeyInfo(info);
+
+	if(optKey == VK_CONTROL){
+		info->ctrlKey = VK_CONTROL;
+	}else if(optKey == VK_SHIFT){
+		info->shiftKey = VK_SHIFT;
+	}else if(optKey == VK_MENU){
+		info->altKey = VK_MENU;
+	}else{
+		;
+	}
+
+	info->key = key;
+}
+
+// KEYINFO構造体を文字列表現にします
+LPTSTR GetKeyInfoString(KEYINFO *keyInfo)
+{
+	LPTSTR alt, ctrl, shift, key;
+	alt = ctrl = shift = key = NULL;
+
+	if(keyInfo->altKey != KEY_NOT_SET)
+		alt		= ::GetKeyNameTextEx(keyInfo->altKey);
+	if(keyInfo->ctrlKey != KEY_NOT_SET)
+		ctrl	= ::GetKeyNameTextEx(keyInfo->ctrlKey);
+	if(keyInfo->shiftKey != KEY_NOT_SET)
+		shift	= ::GetKeyNameTextEx(keyInfo->shiftKey);
+	if(keyInfo->key != KEY_NOT_SET)
+		key		= ::GetKeyNameTextEx(keyInfo->key);
+
+	LPTSTR buffer = NULL;
+	if(alt == NULL && ctrl == NULL && shift == NULL && key == NULL){
+		buffer = ::sprintf_alloc(L"");
+	}else if(alt == NULL && ctrl == NULL && shift == NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s", key);
+	}else if(alt == NULL && ctrl == NULL && shift != NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s", shift, key);
+	}else if(alt == NULL && ctrl != NULL && shift == NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s", ctrl, key);
+	}else if(alt != NULL && ctrl == NULL && shift == NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s", alt, key);
+	}else if(alt == NULL && ctrl != NULL && shift != NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s + %s", ctrl, shift, key);
+	}else if(alt != NULL && ctrl == NULL && shift != NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s + %s", alt, shift, key);
+	}else if(alt != NULL && ctrl != NULL && shift == NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s + %s", ctrl, alt, key);
+	}else if(alt != NULL && ctrl != NULL && shift != NULL && key != NULL){
+		buffer = ::sprintf_alloc(L"%s + %s + %s + %s", ctrl, alt, shift, key);
+	}else{
+		buffer = ::sprintf_alloc(L"undef!");
+		::ErrorMessageBox(L"キー設定に失敗しました");
+	}
+
+	::GlobalFree(alt);
+	::GlobalFree(ctrl);
+	::GlobalFree(shift);
+	::GlobalFree(key);
+	return buffer;
+}
+
+HHOOK g_mouseProxyHook = NULL;
+HWND g_mouseProxyHwnd = NULL;
+LRESULT CALLBACK MouseEventProxyHook(int nCode, WPARAM wp, LPARAM lp)
+{
+	if( nCode < 0 ) //nCodeが負、HC_NOREMOVEの時は何もしない
+		return CallNextHookEx(g_mouseProxyHook, nCode, wp, lp );
+
+	if( nCode == HC_ACTION){
+		MSLLHOOKSTRUCT *msg = (MSLLHOOKSTRUCT *)lp;
+		if( wp == WM_MOUSEMOVE ){
+			::PostMessage(g_mouseProxyHwnd, wp, 0, MAKELPARAM(msg->pt.x, msg->pt.y));
+			return CallNextHookEx(::g_mouseProxyHook, nCode, 0, lp);
+		}
+
+		if( wp == WM_LBUTTONDOWN || wp == WM_LBUTTONUP ||
+			wp == WM_RBUTTONDOWN || wp == WM_RBUTTONUP ){
+				::PostMessage(g_mouseProxyHwnd, wp, 0, MAKELPARAM(msg->pt.x, msg->pt.y));
+				return TRUE;
+		}
+	}
+	return CallNextHookEx(::g_mouseProxyHook, nCode, 0, lp);
+}
+
+BOOL StartMouseEventProxy(HWND hWnd, HINSTANCE hInstance)
+{
+	::g_mouseProxyHwnd = hWnd;
+	::g_mouseProxyHook = ::SetWindowsHookEx(WH_MOUSE_LL, MouseEventProxyHook, hInstance, 0);
+	if(!::g_mouseProxyHook){
+		return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL StopMouseEventProxy()
+{
+	if(g_mouseProxyHook){
+		if(!UnhookWindowsHookEx(g_mouseProxyHook)){
+			return FALSE;
+		}
+		g_mouseProxyHook = NULL;
+	}
+	::g_mouseProxyHwnd = NULL;
+	return TRUE;
+}
+
+BOOL HighlightWindow(HWND hWnd, int bold, COLORREF color)
+{
+	HDC hdc = ::GetWindowDC(hWnd);
+	if(hdc == NULL){
+		return FALSE;
+	}
+
+	HPEN hPen = CreatePen(PS_SOLID, bold, color);
+	HBRUSH hBrush = (HBRUSH)::GetStockObject(HOLLOW_BRUSH);
+
+	HGDIOBJ hPrevPen = ::SelectObject(hdc, hPen);
+	HGDIOBJ hPrevBrush = ::SelectObject(hdc, hBrush);
+
+	RECT rect;
+	::GetWindowRect(hWnd, &rect);
+	::Rectangle(hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top);
+
+	::SelectObject(hdc, hPrevPen);
+	::SelectObject(hdc, hPrevBrush);
+
+	::DeleteObject(hPen);
+	::DeleteObject(hBrush);
+
+	::ReleaseDC(hWnd, hdc);
+	return TRUE;
+}
+
+BOOL HighlightWindow(HWND hWnd)
+{
+	return ::HighlightWindow(hWnd, 5, RGB(0,0,0));
+}
+
+void DuplicateBootCheck(LPCTSTR mutexName)
+{
+	CMutex mutex;
+	try{
+		mutex.createMutex(mutexName);
+	}catch(std::exception e){
+		::ErrorMessageBox(L"多重起動です");
+		exit(0);
 	}
 }

@@ -13,78 +13,16 @@ using namespace Gdiplus;
 
 #define MAX_LOADSTRING 100
 #define MUTEX_NAME L"GSD_crosshair"
+#define WM_TASKTRAY (WM_APP + 1)
+#define ID_TASKTRAY 1
+#define S_TASKTRAY_TIPS L"GSD_Crosshair"
 
-// グローバル変数:
 HINSTANCE hInst;								// 現在のインターフェイス
 TCHAR szTitle[MAX_LOADSTRING];					// タイトル バーのテキスト
 TCHAR szWindowClass[MAX_LOADSTRING];			// メイン ウィンドウ クラス名
 
 HWND g_hMainDlg = NULL;
 HWND g_hWnd = NULL;
-
-#define WM_TASKTRAY (WM_APP + 1)
-#define ID_TASKTRAY 1
-
-#define S_TASKTRAY_TIPS L"GSD_Crosshair"
-
-BOOL GetClsidEncoderFromMimeType(LPCTSTR format, LPCLSID lpClsid)
-{
-	UINT num, size;
-	if( ::GetImageEncodersSize(&num, &size) != Ok ){
-		::ShowLastError();
-		return FALSE;
-	}
-
-	// バッファを確保
-	ImageCodecInfo *info = (ImageCodecInfo *)::GlobalAlloc(GMEM_FIXED, size);
-
-	// エンコーダーの情報を転送
-	if( ::GetImageEncoders(num, size, info) != Ok ){
-		::GlobalFree(info);
-		return FALSE;
-	}
-
-	for(UINT i=0; i<num; i++){
-		if( wcscmp(info[i].MimeType, format) == 0 ){
-			*lpClsid = info[i].Clsid;
-			::GlobalFree(info); // found
-			return TRUE;
-		}
-	}
-
-	::GlobalFree(info); // not found
-	return FALSE;
-}
-
-
-BOOL GetClsidEncoderFromFileName(LPCTSTR fileName, LPCLSID lpClsid)
-{
-	UINT num, size;
-	if( ::GetImageEncodersSize(&num, &size) != Ok ){
-		::ShowLastError();
-		return FALSE;
-	}
-
-	// バッファを確保
-	ImageCodecInfo *info = (ImageCodecInfo *)::GlobalAlloc(GMEM_FIXED, size);
-
-	// エンコーダーの情報を転送
-	if( ::GetImageEncoders(num, size, info) != Ok ){
-		::GlobalFree(info);
-		return FALSE;
-	}
-
-	for(UINT i=0; i<num; i++){
-		if( PathMatchSpecW(fileName, info[i].FilenameExtension)){
-			*lpClsid = info[i].Clsid;
-			::GlobalFree(info); // found
-			return TRUE;
-		}
-	}
-
-	::GlobalFree(info); // not found
-	return FALSE;
-}
 
 // このコード モジュールに含まれる関数の宣言を転送します:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -101,13 +39,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 	// 多重起動防止
-	CMutex mutex;
-	try{
-		mutex.createMutex(MUTEX_NAME);
-	}catch(std::exception e){
-		::ErrorMessageBox(L"多重起動です");
-		exit(0);
-	}
+	DuplicateBootCheck(MUTEX_NAME);
 
 	MSG msg;
 	HACCEL hAccelTable;

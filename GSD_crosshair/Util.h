@@ -16,6 +16,9 @@
 #include <math.h>
 #include <string>
 
+#include "KeyHook.h"
+#pragma comment(lib, "KeyHook.lib")
+
 // ダイアログ用のメッセージクラッカー
 #define HANDLE_DLG_MSG(hwnd, msg, fn) \
     case(msg): \
@@ -30,6 +33,8 @@
 #ifndef DLLEXPORT
 	#define DLLEXPORT extern "C" __declspec(dllimport)
 #endif
+
+#define DUPLICATE_BOOT_CHECK(MUTEX_NAME) DuplicateBootCheck(MUTEX_NAME)
 
 void trace(LPCTSTR format, ...);
 void FillRectBrush(HDC hdc, int x, int y, int width, int height, COLORREF color);
@@ -82,6 +87,21 @@ void NoticeRedraw(HWND hWnd);
 void RectangleNormalize(RECT *rect);
 std::wstring str2wstr(std::string str);
 LPTSTR GetConfigPath(LPTSTR fileName);
+void GetPrivateProfileKeyInfo(LPCTSTR section, LPCTSTR baseKeyName, KEYINFO *keyInfo, LPCTSTR configPath);
+void WritePrivateProfileKeyInfo(LPCTSTR section, LPCTSTR baseKeyName, KEYINFO *keyInfo, LPCTSTR configPath);
+void QuickSetKeyInfo(KEYINFO *info, int optKey, int key);
+LPTSTR GetKeyInfoString(KEYINFO *keyInfo);
+
+// mouse proxy
+LRESULT CALLBACK MouseEventProxyHook(int nCode, WPARAM wp, LPARAM lp);
+BOOL StartMouseEventProxy(HWND hWnd, HINSTANCE hInstance);
+BOOL StopMouseEventProxy();
+
+// window manipulate
+BOOL HighlightWindow(HWND hWnd, int bold, COLORREF color);
+BOOL HighlightWindow(HWND hWnd);
+
+void DuplicateBootCheck(LPCTSTR mutexName);
 
 // 多重起動防止用簡易クラス
 #include <exception>
