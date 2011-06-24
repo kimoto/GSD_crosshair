@@ -39,7 +39,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
 	// 多重起動防止
-	DuplicateBootCheck(MUTEX_NAME);
+	CMutex mutex;
+	try{
+		mutex.createMutex(MUTEX_NAME);
+	}catch(std::exception e){
+		::ErrorMessageBox(L"多重起動です");
+		exit(0);
+	}
 
 	MSG msg;
 	HACCEL hAccelTable;
