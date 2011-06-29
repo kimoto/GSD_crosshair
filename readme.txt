@@ -25,4 +25,4 @@ crosshairの変更方法
 
 
 --
-2011-05-012: written by kimoto
+2011-05-12: written by kimoto
