@@ -463,6 +463,21 @@ void ErrorMessageBox(LPCTSTR format, ...)
 	va_end(arg);
 }
 
+void LocaleErrorMsgBox(UINT msgId, ...)
+{
+	va_list arg;
+	va_start(arg, msgId);
+
+  TCHAR format[1024];
+  ::LoadString(::GetModuleHandle(NULL), msgId, format, sizeof(format)); 
+
+  TCHAR buffer[1024];
+  ::_vsnwprintf_s(buffer, TRACE_BUFFER_SIZE, _TRUNCATE, format, arg);
+
+  ::MessageBox(NULL, buffer, L"Error", MB_OK);
+  va_end(arg);
+}
+
 // 現在のプロセスの実行ファイルの存在するパスを取得します
 BOOL GetExecuteDirectory(LPTSTR buffer, DWORD size_in_words)
 {
@@ -742,8 +757,7 @@ void TasktrayDeleteIcon(HWND hWnd, UINT id)
 	nid.hWnd = hWnd;				// メインウィンドウハンドル
 	nid.uID = id;			// コントロールID
 	
-	if( !::Shell_NotifyIcon(NIM_DELETE, &nid) )
-		::ShowLastError();
+	::Shell_NotifyIcon(NIM_DELETE, &nid);
 }
 
 HWND WindowFromCursorPos()

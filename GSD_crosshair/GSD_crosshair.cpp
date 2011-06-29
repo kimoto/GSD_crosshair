@@ -17,6 +17,8 @@ using namespace Gdiplus;
 #define ID_TASKTRAY 1
 #define S_TASKTRAY_TIPS L"GSD_Crosshair"
 
+#define CROSSHAIR_PNG_PATH L"crosshair.png"
+
 HINSTANCE hInst;								// 現在のインターフェイス
 TCHAR szTitle[MAX_LOADSTRING];					// タイトル バーのテキスト
 TCHAR szWindowClass[MAX_LOADSTRING];			// メイン ウィンドウ クラス名
@@ -38,12 +40,16 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
+  // ロケールの設定(テスト用)
+  //::SetThreadUILanguage(0x409); // English
+  //::SetThreadUILanguage(0x411); // Japanese
+
 	// 多重起動防止
 	CMutex mutex;
 	try{
 		mutex.createMutex(MUTEX_NAME);
 	}catch(std::exception e){
-		::ErrorMessageBox(L"多重起動です");
+		::LocaleErrorMsgBox(IDS_DUPLICATE_BOOT);
 		exit(0);
 	}
 
@@ -119,7 +125,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 BOOL GUI_GSD_Start(LPCTSTR imageFilePath)
 {	
 	if(!::PathFileExists(imageFilePath)){
-		::ErrorMessageBox(L"ファイルが存在しません: %s", imageFilePath);
+    ::LocaleErrorMsgBox(IDS_FILE_NOT_EXIST_FORMAT, imageFilePath);
 		return FALSE;
 	}
 
@@ -215,12 +221,7 @@ BOOL OnCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct)
 {
 	// タスクトレイ復帰用
 	taskBarMsg = RegisterWindowMessage(TEXT("TaskbarCreated"));
-
-	if( !::GUI_GSD_Start(L"crosshair.png") ){
-		::ShowLastError();
-		return FALSE;
-	}
-	return TRUE;
+	return ::GUI_GSD_Start(CROSSHAIR_PNG_PATH);
 }
 
 BOOL OnDestroy(HWND hWnd)

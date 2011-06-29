@@ -102,6 +102,7 @@ BOOL HighlightWindow(HWND hWnd, int bold, COLORREF color);
 BOOL HighlightWindow(HWND hWnd);
 
 void DuplicateBootCheck(LPCTSTR mutexName);
+void LocaleErrorMsgBox(UINT msgId, ...);
 
 // 多重起動防止用簡易クラス
 #include <exception>
