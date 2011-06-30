@@ -40,9 +40,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-  // ロケールの設定(テスト用)
-  //::SetThreadUILanguage(0x409); // English
-  //::SetThreadUILanguage(0x411); // Japanese
+  // ロケールの設定
+  // 日本だったら日本語、それ以外はすべて英語
+  UINT localeId = GetUserDefaultLCID();
+  if(0x411 != localeId){
+    localeId = 0x409; // 日本語以外は英語UIとして表示する
+  }
+  ::SetThreadUILanguage(localeId);
 
 	// 多重起動防止
 	CMutex mutex;

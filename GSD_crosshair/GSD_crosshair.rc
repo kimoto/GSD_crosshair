@@ -35,19 +35,19 @@ IDI_SMALL               ICON         "GSD_crosshair.ico"
 //
 // メニュー
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
-IDR_MENU MENU {
-	POPUP "dummy text"
-	{
-		MENUITEM "終了", IDM_EXIT;
-	}
-}
-
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 IDR_MENU MENU {
 	POPUP "dummy text"
 	{
 		MENUITEM "Quit", IDM_EXIT;
+	}
+}
+
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+IDR_MENU MENU {
+	POPUP "dummy text"
+	{
+		MENUITEM "終了", IDM_EXIT;
 	}
 }
 
