@@ -230,8 +230,6 @@ BOOL OnCreate(HWND hWnd, LPCREATESTRUCT lpCreateStruct)
 
 BOOL OnDestroy(HWND hWnd)
 {
-	GUI_GSD_Finalize();
-	::TasktrayDeleteIcon(hWnd, ID_TASKTRAY);
 	PostQuitMessage(0);
 	return TRUE;
 }
@@ -241,6 +239,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message){
 		HANDLE_MSG(hWnd, WM_CREATE, OnCreate);
 		HANDLE_MSG(hWnd, WM_DESTROY, OnDestroy);
+
+  case WM_NCDESTROY:
+	  GUI_GSD_Finalize();
+	  ::TasktrayDeleteIcon(hWnd, ID_TASKTRAY);
+    return TRUE;
 
 	case WM_COMMAND:
 		switch(LOWORD(wParam)){
